@@ -1,0 +1,44 @@
+services:
+  web-sever:
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    volumes:
+      - ./nginx/html/:/usr/share/nginx/html/
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      exp-network:
+        ipv4_address: 192.168.100.10
+
+  dns-server:
+    build:
+      context: .
+      dockerfile: ./dns/Dockerfile
+    restart: always
+    volumes:
+      - ./dns/named.conf:/etc/bind/named.conf
+      - ./dns/zone/:/etc/bind/zone/
+    command: named -c /etc/bind/named.conf -g -u named
+    networks:
+      exp-network:
+        ipv4_address: 192.168.100.20
+
+  client:
+    build:
+      context: .
+      dockerfile: ./client/Dockerfile
+    volumes:
+      - ./client/resolv.conf:/etc/resolv.conf
+    command: tail -f /dev/null
+    networks:
+      exp-network:
+        ipv4_address: 192.168.100.30
+
+networks:
+  exp-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.100.0/24
+          gateway: 192.168.100.254
